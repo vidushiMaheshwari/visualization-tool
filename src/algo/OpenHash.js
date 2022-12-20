@@ -600,19 +600,28 @@ export default class OpenHash extends Hash {
 		this.commands = [];
 
 		for (let i = 0; i < this.hashTableValues.length; i++) {
-			if (this.hashTableValues[i]) {
-				let node = this.hashTableValues[i];
-				while (node != null) {
-					console.log(`node != null: ${node}`)
-					this.cmd(act.delete, node.graphicID);
-					node = node.next;
-				}
-				this.cmd(act.setNull, this.hashTableVisual[i], 1);
+			// delete all probes
+			let node = this.hashTableValues[i];
+
+			while (node != null) {
+				this.cmd(act.delete, node.graphicID);
+				node = node.next;
+			}
+
+			this.cmd(act.setNull, this.hashTableVisual[i], 1);
+
+			if (i > HASH_TABLE_SIZE) {
+				this.cmd(act.delete, this.hashTableVisual[i]);
+				this.cmd(act.delete, this.hashTableIndices[i]);
 			}
 		}
 
-		this.hashTableValues = new Array(this.table_size);
+		this.cmd(act.setText, this.loadFactorID, `Load Factor: ${DEFAULT_LOAD_FACTOR}`);
+
+		this.load_factor = DEFAULT_LOAD_FACTOR; // SHOULD I be doing this?? 
 		this.size = 0;
+		this.hashTableValues = new Array(HASH_TABLE_SIZE);
+		this.table_size = HASH_TABLE_SIZE;
 
 		return this.commands;
 	}

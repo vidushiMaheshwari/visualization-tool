@@ -711,6 +711,12 @@ export default class ClosedHash extends Hash {
 			this.cmd(act.delete, this.indexLabelID[i]);
 		}
 
+		this.cmd(
+			act.setText,
+			this.ExplainLabel,
+			'Clear the table',
+		);
+
 		this.table_size = CLOSED_HASH_TABLE_SIZE;
 		this.empty = Array(this.table_size);
 		this.deleted = Array(this.table_size);
