@@ -142,6 +142,22 @@ export default class Hash extends Algorithm {
 
 		addDivisorToAlgorithmBar();
 
+		this.lengthField = addControlToAlgorithmBar('Text', '');
+		this.lengthField.size = 3;
+		this.lengthField.onkeydown = this.returnSubmit(
+			this.lengthField,
+			this.changeLength.bind(this),
+			3,
+			true,
+		);
+
+		this.controls.push(this.lengthField);
+		this.lengthButton = addControlToAlgorithmBar('Button', 'Table Length');
+		this.lengthButton.onclick = this.lengthChangeCallBack.bind(this);
+		this.controls.push(this.lengthButton);
+
+		addDivisorToAlgorithmBar();
+
 		const radioButtonList = addRadioButtonGroupToAlgorithmBar(
 			['Hash Integer', 'Hash Strings'],
 			'HashType',
@@ -579,6 +595,12 @@ export default class Hash extends Algorithm {
 			this.loadField.value = '';
 			this.implementAction(this.changeLoadFactor.bind(this), newLF);
 		}
+	}
+
+	lengthChangeCallBack() {
+		const val = this.lengthField.value;
+		this.lengthField.value = '';
+		this.implementAction(this.changeLength.bind(this), val);
 	}
 
 	reset() {

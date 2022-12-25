@@ -578,6 +578,109 @@ export default class ClosedHash extends Hash {
 		return this.commands;
 	}
 
+	changeLength(length) {
+
+		if (length > MAX_SIZE || length <= 0 || length < this.size) {
+			this.commands = [];
+			this.cmd(act.setText, this.ExplainLabel, 'Invalid table length!');
+			return this.commands;
+		}
+
+		// very similar to resize case, just does the same for DEL markers (
+		// add DEL markers as if they are not deleted)
+
+		const old_table_size = this.table_size;
+		let values_changed = 0;
+		this.table_size = length; // doing this before for doHash method
+
+		const new_table_values = new Array(this.table_size);
+		const new_table_deleted = new Array(this.table_size);
+		const new_table_empty = new Array(this.table_size);
+
+		for (let i = 0; i < this.table_size; i++) {
+
+			if (this.currentHashingTypeButtonState === this.linearProblingButton) {
+				this.skipDist[i] = i + 1;
+			} else if (this.currentHashingTypeButtonState === this.quadraticProbingButton) {
+				this.skipDist[i] = (i + 1) * (i + 1);
+			}
+			new_table_empty[i] = true;
+			new_table_deleted[i] = false;
+		}
+
+		for (let i = 0; i < old_table_size; i++) {
+			if (values_changed > length) {
+				// not enough space in the new table (because of DEL markers).
+				this.table_size = old_table_size;
+				this.commands = [];
+				this.cmd(act.setText, this.ExplainLabel, 'Invalid table length!');
+				return this.commands;
+			}
+
+			if (!this.empty[i]) {
+				let index = this.doHash(this.hashTableValues[i].key);
+				while (!new_table_empty[index]) {
+					index = this.skipDist[index] % this.table_size;
+				}
+
+				new_table_values[index] = this.hashTableValues[i];
+				if (this.deleted[i]) new_table_deleted[index] = true;
+				new_table_empty[index] = false;
+
+				values_changed++;
+			}
+		}
+
+		this.commands = [];
+
+		for (let i = 0; i < old_table_size; i++) {
+			this.cmd(act.delete, this.hashTableVisual[i]);
+			this.cmd(act.delete, this.indexLabelID[i]);
+		}
+
+		this.hashTableValues = new_table_values;
+		this.empty = new_table_empty;
+		this.deleted = new_table_deleted;
+		this.hashTableVisual = new Array(this.table_size);
+		this.indexLabelID = new Array(this.table_size);
+		this.indexXPos = new Array(this.table_size);
+		this.indexYPos = new Array(this.table_size);
+
+		for (let i = 0; i < this.table_size; i++) {
+			this.hashTableVisual[i] = this.nextIndex++;
+
+			const nextXPos = ARRAY_ELEM_START_X + (i % this.elements_per_row) * ARRAY_ELEM_WIDTH;
+			const nextYPos =
+				ARRAY_ELEM_START_Y +
+				Math.floor(i / this.elements_per_row) * ARRAY_VERTICAL_SEPARATION;
+			this.cmd(
+				act.createRectangle,
+				this.hashTableVisual[i],
+				'',
+				ARRAY_ELEM_WIDTH,
+				ARRAY_ELEM_HEIGHT,
+				nextXPos,
+				nextYPos,
+			);
+
+			this.indexLabelID[i] = this.nextIndex++;
+			this.indexXPos[i] = nextXPos;
+			this.indexYPos[i] = nextYPos + ARRAY_ELEM_HEIGHT;
+			this.cmd(
+				act.createLabel,
+				this.indexLabelID[i],
+				i,
+				this.indexXPos[i],
+				this.indexYPos[i],
+			);
+			if (!new_table_empty[i]) this.cmd(act.setText, this.hashTableVisual[i], (this.deleted[i]) ? 'DEL' : this.hashTableValues[i].elem);
+
+			this.cmd(act.setForegroundColor, this.indexLabelID[i], INDEX_COLOR);
+		}
+
+		return this.commands;
+	}
+
 	setup() {
 		this.resetIndex = this.nextIndex;
 		this.table_size = CLOSED_HASH_TABLE_SIZE;

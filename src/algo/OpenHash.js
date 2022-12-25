@@ -553,6 +553,10 @@ export default class OpenHash extends Hash {
 		return this.commands;
 	}
 
+	changeLength(length) {
+		console.log(`New length ${length}`);
+	}
+
 	resetAll() {
 		let tmp;
 		this.commands = super.resetAll();
